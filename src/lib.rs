@@ -1,3 +1,4 @@
+#![feature(generic_associated_types)]
 //! Ergonomics & safety focused deep learning in Rust. Main features include:
 //! 1. Const generic tensor library with tensors up to 4d!
 //! 2. A large library of tensor operations (matrix multiplication, arithmetic, activation functions, etc).

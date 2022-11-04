@@ -21,9 +21,118 @@ where
     batch_size: usize,
     shuffle: bool,
     drop_last: bool,
-    rng: R,
+    rng: Option<R>,
     collate_fn: C,
 }
+
+
+/// Basic builder for creating dataloader.
+#[must_use]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Ord)]
+pub struct Builder<D, R, C>
+    where
+        D: IterableDataset,
+        R: Rng,
+        C: Collate<<D as IntoIterator>::Item>,
+{
+    dataset: D,
+    batch_size: usize,
+    drop_last: bool,
+    rng: Option<R>,
+    collate_fn: C,
+    shuffle: bool,
+}
+
+impl<D, R, C> Builder<D, R, C>
+    where
+        D: IterableDataset,
+        R: Rng,
+        C: Collate<<D as IntoIterator>::Item>,
+{
+    /// Create a new [`Builder`], with default fields.
+    /// By default the [`Builder`] is sequential and have a `batch_size` of one.
+    pub fn new(dataset: D) -> Self {
+        Self {
+            dataset,
+            batch_size: 1,
+            shuffle: false,
+            drop_last: false,
+            rng: None,
+            collate_fn: C,
+        }
+    }
+}
+
+impl<D, R, C> Builder<D, R, C>
+    where
+        D: IterableDataset,
+        R: Rng,
+        C: Collate<<D as IntoIterator>::Item>,
+{
+    /// Use a random sampler.
+    pub fn shuffle(mut self) -> Builder<D, R, C> {
+        self.shuffle = true;
+        self
+    }
+    /// Set the number of elements in a batch.
+    pub fn batch_size(mut self, batch_size: usize) -> Self {
+        self.batch_size = batch_size;
+        self
+    }
+
+    /// Drop the lasts element if they don't feat into a batch. For instance if a dataset have 13
+    /// samples and a `batch_size` of 5, the last 3 samples will be droped.
+    pub fn drop_last(mut self) -> Self {
+        self.drop_last = true;
+        self
+    }
+
+    /// Set a custom rng object.
+    pub fn rng<RF>(self, rng: RF) -> Builder<D, RF, C>
+        where
+            RF: Rng
+    {
+        Builder {
+            dataset: self.dataset,
+            batch_size: self.batch_size,
+            drop_last: self.drop_last,
+            rng: rng,
+            collate_fn: self.collate_fn,
+            shuffle: self.shuffle,
+        }
+    }
+
+    /// Set a custom collate function.
+    pub fn collate_fn<CF>(self, collate_fn: CF) -> Builder<D, R, CF>
+        where
+            CF: Collate<D::Item>,
+    {
+        Builder {
+            dataset: self.dataset,
+            batch_size: self.batch_size,
+            drop_last: self.drop_last,
+            rng: self.rng,
+            collate_fn,
+            shuffle: self.shuffle,
+        }
+    }
+
+    /// Create a `Dataloader` from a [`Builder`].
+    pub fn build(self) -> IterableDataLoader<D, R, C> {
+        IterableDataLoader {
+            dataset: self.dataset,
+            batch_size: self.batch_size,
+            drop_last: self.drop_last,
+            rng: self.rng,
+            collate_fn: self.collate_fn,
+            shuffle: self.shuffle,
+        }
+    }
+}
+
+
+
+
 
 #[derive(Debug)]
 pub struct IntoIter<D: Iterator, R: Rng, C: Collate<D::Item>> {

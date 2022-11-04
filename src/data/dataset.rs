@@ -1,5 +1,6 @@
+
 pub trait Dataset {
-    type DataItem;
+    type DataItem<T>;
 }
 
 
@@ -16,4 +17,11 @@ pub trait Dataset {
 // pub trait MapDataset : Dataset + Len + GetItem {}
 
 
-pub trait IterableDataset : Dataset + IntoIterator {}
+pub trait IterableDataset : Dataset + IntoIterator {
+
+}
+
+
+// Add transforms:
+// for example dataset.map() should return another dataset
+// (where the underlying iterator is modified)
